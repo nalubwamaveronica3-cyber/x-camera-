@@ -3,6 +3,7 @@ package com.xcamera.test
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -31,6 +32,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        Log.d("X Camera", "App started - X Camera test app")
 
         previewView = findViewById(R.id.previewView)
         captureButton = findViewById(R.id.captureButton)
@@ -82,26 +85,45 @@ class MainActivity : AppCompatActivity() {
                     preview,
                     imageCapture
                 )
+                Log.d("X Camera", "Camera started successfully")
             } catch (e: Exception) {
+                Log.e("X Camera", "Camera failed to start: ${e.message}")
                 Toast.makeText(this, "Camera failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }, ContextCompat.getMainExecutor(this))
     }
 
     private fun takePhoto() {
+        Log.d("X Camera", "========================================")
+        Log.d("X Camera", "takePhoto() called - capture button pressed!")
+
         // Create a unique file name for the captured image
         val photoFile = java.io.File(
             externalMediaDirs.firstOrNull(),
             "test_photo_${System.currentTimeMillis()}.jpg"
         )
 
+        Log.d("X Camera", "Photo file path: ${photoFile.absolutePath}")
+
+        // Check if imageCapture is initialized
+        if (!::imageCapture.isInitialized) {
+            Log.e("X Camera", "❌ imageCapture is not initialized!")
+            Toast.makeText(this, "Camera not ready", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
+        Log.d("X Camera", "Calling imageCapture.takePicture()...")
 
         imageCapture.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    Log.d("X Camera", "✅ onImageSaved CALLED!")
+                    Log.d("X Camera", "Photo saved: ${photoFile.absolutePath}")
+                    Log.d("X Camera", "========================================")
                     Toast.makeText(
                         this@MainActivity,
                         "Photo saved: ${photoFile.absolutePath}",
@@ -110,6 +132,9 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onError(exception: ImageCaptureException) {
+                    Log.e("X Camera", "❌ onError CALLED!")
+                    Log.e("X Camera", "Capture failed: ${exception.message}")
+                    Log.e("X Camera", "========================================")
                     Toast.makeText(
                         this@MainActivity,
                         "Capture failed: ${exception.message}",
@@ -118,6 +143,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
+
+        Log.d("X Camera", "takePicture() call complete - waiting for callback...")
+        Log.d("X Camera", "========================================")
     }
 
     private fun allPermissionsGranted(): Boolean {
@@ -137,6 +165,7 @@ class MainActivity : AppCompatActivity() {
             if (allPermissionsGranted()) {
                 startCamera()
             } else {
+                Log.e("X Camera", "Camera permission denied")
                 Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show()
             }
         }
